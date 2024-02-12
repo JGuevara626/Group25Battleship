@@ -5,7 +5,7 @@ Battleship Game Demo
 
 Goal: Create a demo of a match in the Battleship game that ani came up with. 
 
-Walkthrough of Match: There will be 2 players, each with one battleship. Taking turns, the player whose turn it is will select from a few options, while the other player looks away. Alternatively, both players can choose at the same time using different keys on the keyboard. Once the timer on each turn is up, the locked in choices made will take place. These choices are (A) which of the 3 areas on their side they would like to move to(or stay in) and (B) which of the 3 areas on the opponent’s side they would like to fire their cannon at. This will repeat until one or both players have taken 3 hits, sinking that player’s ship. In the event that both players have taken 3 shots, there will be a draw. Otherwise the victor is clear. 
+Walkthrough of Match: There will be 2 players, each with one battleship. While Under a Timer, each player will be required to make the descisions of (A) Choose which of the 3 areas on their side they would like to move to(or stay in) and (B) which of the 3 areas on the opponent’s side they would like to fire their cannon at. Once the timer on each turn is up, the locked in choices made will take place. This will repeat until one or both players have taken 3 hits, sinking that player’s ship. In the event that both players have taken 3 shots, there will be a draw. Otherwise the victor is clear. 
 
 Objects to implement:
 Battleship object
