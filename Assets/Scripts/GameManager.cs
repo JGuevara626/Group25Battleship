@@ -14,8 +14,9 @@ public class GameManager : MonoBehaviour
         battleAnimation,
         gameOver
     }
+    public gameState state;
     //timer(will be put in once a timerScript is created
-
+    public Timer timer;
     // references to both players ships to access their characteristics
     public PlayerController player1;//private?
     public PlayerController player2;//private?
@@ -32,6 +33,8 @@ public class GameManager : MonoBehaviour
         // both players' ships scan -> end turn
         
         // change state to choiceSelection or battleAnimation based on if players have ships remaining
+
+        //reset states and timer
     }
     void HandleShipAction(string action, double target)
     {
@@ -58,12 +61,17 @@ public class GameManager : MonoBehaviour
     //
     void Start()
     {
-        
+        state = gameState.shipPlacement;
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+        // if timer expires or both players are finished locking in their choices, then change states to the battleAnimation state.
+        if (timer.timer == 0f || (player1.status == PlayerController.PlayerState.waitPhase && player2.status == PlayerController.PlayerState.waitPhase))
+        { 
+            HandleTurnOrder();
+        }
+
     }
 }

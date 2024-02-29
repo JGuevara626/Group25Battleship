@@ -8,13 +8,14 @@ public class PlayerController : MonoBehaviour
     // characteristics of the player's turn
 
     // state(ship placement, selecting cards, selecting where to use cards, waiting for opponent/timer- game manager can set back to action select 
-    public enum state //
+    public enum PlayerState //
     {
         shipPlacement,
         selectActions,
         selectActionLocation,
         waitPhase
     }
+    public PlayerState status;
     // ship 1, ship 2, ship 3
     public Battleship ship1;
     public Battleship ship2;
@@ -57,7 +58,7 @@ public class PlayerController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        status = PlayerState.shipPlacement;
     }
 
     // Update is called once per frame
