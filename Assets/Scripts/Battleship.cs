@@ -17,8 +17,12 @@ public class Battleship : MonoBehaviour
     public bool shield;
     // speed of movement(maybe unnecessary if we just want to make the ship render in a different square rather than sliding over.)
     public double speed;
+    public Tile OccupiedTile;
+    public int player = 0;
+    public bool moving = false;
+    private List<Tile> tileMovement = new List<Tile>();
     // playerNumber( which player it belongs to)- I think we can just refer to its parent, and when we instantiate the ship, we can make it a child of the player
-    
+
     // Functions
 
 
@@ -30,11 +34,47 @@ public class Battleship : MonoBehaviour
         shield = false;
         target = 0.0;
         speed = 1; // we can decide how fast the ships will move
+        choice = "unselected";
     }
 
     // Update is called once per frame
     void Update()
     {
         
+    }
+
+    private void OnMouseDown()
+    {
+        if(choice != "unselected")
+        {
+            if (moving)
+            {
+                foreach (Tile tile in tileMovement)
+                {
+                    tile.SetHighlight(false);
+                }
+
+                tileMovement.Clear();
+                moving = false;
+
+            }
+            else
+            {
+                bool b = false;
+                Vector2 centerV = new Vector2(Mathf.RoundToInt(transform.position.x), Mathf.RoundToInt(transform.position.y));
+                if (player == 1)
+                {
+                    b = true;
+                }
+
+                tileMovement = GridManager.instance.GetDirectionalTiles(centerV, b);
+                foreach (Tile tile in tileMovement)
+                {
+                    tile.SetHighlight(true);
+                }
+                moving = true;
+            }
+        }
+
     }
 }

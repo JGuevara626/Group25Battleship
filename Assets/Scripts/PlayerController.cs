@@ -1,7 +1,9 @@
+using Photon.Pun;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using static GameManager;
 
 public class PlayerController : MonoBehaviour
 {
@@ -17,9 +19,7 @@ public class PlayerController : MonoBehaviour
     }
     public PlayerState status;
     // ship 1, ship 2, ship 3
-    public Battleship ship1;
-    public Battleship ship2;
-    public Battleship ship3;
+    public List<Battleship> shipList = new List<Battleship>();
 
     public GameObject shipObj;
 
@@ -34,6 +34,8 @@ public class PlayerController : MonoBehaviour
 
     // message to user
     public Text message;
+    public int player = 0;
+    public bool lookingForPOS = false;
     // lockInButton- needs to be created
     // cancel choice button - needs to be created in order to revert back from selectActionLocation state to selectActions state without locking in a choice.
 
@@ -50,20 +52,70 @@ public class PlayerController : MonoBehaviour
     void handleShipPlacement()
     {
         // will be called on click during shipPlacement state
+        var mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        //print(Mathf.RoundToInt(mouseWorldPos.x) + " " + Mathf.RoundToInt(mouseWorldPos.y));
+        Vector2 v2 = new Vector2(Mathf.RoundToInt(mouseWorldPos.x), Mathf.RoundToInt(mouseWorldPos.y));
         // if ship is already placed there, do nothing
+        bool b = false;
+        if(player == 1)
+        {
+            b = true;
+        }
+        Tile tilePos = GridManager.instance.GetTilePOS(v2, b);
+        if (tilePos != null && tilePos.Occupied == false)
+        {
+            GameObject ship = Instantiate(shipObj, this.transform);
+            ship.GetComponent<Battleship>().player = player;
+            tilePos.setUnit(ship.GetComponent<Battleship>());
+            shipsPlaced++;
+            shipList.Add(ship.GetComponent<Battleship>());
+        }
+
         // otherwise if(shipsPlaced = 0, createShip(ship1), if shipsplaced = 1, createShip(ship2), if shipsPlaced = 2, createShip(ship3)
         // increment shipsPlaced;
+        if (shipsPlaced == 3)
+        {
+            ChangeState(PlayerState.waitPhase);
+            foreach (var ship in shipList)
+            {
+                ship.choice = "";
+            }
+        }
+        else
+        {
+            lookingForPOS=true;
+        }
     }
     
     // Start is called before the first frame update
     void Start()
     {
-        status = PlayerState.shipPlacement;
+        ChangeState(PlayerState.shipPlacement);
+        //lookingForPOS=true;
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+        print("Local Player Actor Number " + PhotonNetwork.LocalPlayer.ActorNumber);
+        if (lookingForPOS && Input.GetMouseButtonDown(0) && player == 1)
+        {
+            lookingForPOS=false;
+            handleShipPlacement();
+        }
     }
-}
+
+    public void ChangeState(PlayerState pstate)
+    {
+        status = pstate;
+        switch (pstate)
+        {
+            case PlayerState.shipPlacement:
+                lookingForPOS = true;
+                break;
+            case PlayerState.waitPhase:
+                break;
+        }
+    }
+}   
+

@@ -5,7 +5,7 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     //characteristics of game manager
-
+    public static GameManager Instance;
     //state(ship placement, choice selection, animation/turn playout phase, game over)
     public enum gameState
     {
@@ -20,7 +20,7 @@ public class GameManager : MonoBehaviour
     // references to both players ships to access their characteristics
     public PlayerController player1;//private?
     public PlayerController player2;//private?
-
+    public GameObject bs;
     //functions
 
     // handle result of turn
@@ -59,19 +59,47 @@ public class GameManager : MonoBehaviour
         // position = newPosition;
     }
     //
-    void Start()
+    private void Awake()
     {
-        state = gameState.shipPlacement;
+        Instance = this;
     }
 
+    void Start()
+    {
+        player1 = gameObject.AddComponent<PlayerController>();
+        player2 = gameObject.AddComponent<PlayerController>();
+        player1.player = 1;
+        player1.shipObj = bs;
+        player2.player = 2;
+        player2.shipObj = bs;
+        ChangeState(gameState.shipPlacement);
+    }
+
+    public void ChangeState(gameState gstate) 
+    {
+        state = gstate;
+        switch (gstate)
+        {
+            case gameState.shipPlacement:
+                GridManager.instance.GenerateGrid();
+
+                break;
+            case gameState.choiceSelection:
+                break; 
+            case gameState.battleAnimation:
+                break;
+            default:
+                break;
+        }
+    }
     // Update is called once per frame
     void Update()
     {
         // if timer expires or both players are finished locking in their choices, then change states to the battleAnimation state.
-        if (timer.timer == 0f || (player1.status == PlayerController.PlayerState.waitPhase && player2.status == PlayerController.PlayerState.waitPhase))
-        { 
-            HandleTurnOrder();
-        }
+        //if (timer.timer == 0f || (player1.status == PlayerController.PlayerState.waitPhase && player2.status == PlayerController.PlayerState.waitPhase))
+        //{ 
+        //    HandleTurnOrder();
+        //}
 
     }
 }
