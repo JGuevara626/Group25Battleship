@@ -3,12 +3,8 @@
 ## Table of Contents
 - [Introduction](#introduction)
 - [Features](#features)
-- [Getting Started](#getting-started)
 - [Gameplay](#gameplay)
-- [Controls](#controls)
-- [Scoring](#scoring)
 - [Development](#development)
-- [Contributing](#contributing)
 - [License](#license)
 
 ---
