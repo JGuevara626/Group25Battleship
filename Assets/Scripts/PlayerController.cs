@@ -1,11 +1,12 @@
 using Photon.Pun;
+using Photon.Realtime;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using static GameManager;
 
-public class PlayerController : MonoBehaviour
+public class PlayerController : MonoBehaviourPunCallbacks
 {
     // characteristics of the player's turn
 
@@ -13,6 +14,7 @@ public class PlayerController : MonoBehaviour
     public enum PlayerState //
     {
         shipPlacement,
+        placementReady,
         selectActions,
         selectActionLocation,
         waitPhase
@@ -24,7 +26,7 @@ public class PlayerController : MonoBehaviour
     public GameObject shipObj;
 
     // ships placed
-    public int shipsPlaced;
+    public int shipsPlaced = 0;
     // ships alive/healthy count
 
     public int shipsAlive;
@@ -36,6 +38,7 @@ public class PlayerController : MonoBehaviour
     public Text message;
     public int player = 0;
     public bool lookingForPOS = false;
+    ExitGames.Client.Photon.Hashtable playerProperty = new ExitGames.Client.Photon.Hashtable();
     // lockInButton- needs to be created
     // cancel choice button - needs to be created in order to revert back from selectActionLocation state to selectActions state without locking in a choice.
 
@@ -46,25 +49,22 @@ public class PlayerController : MonoBehaviour
     void createShip(Battleship ship)
     {
         // instantiate the ship, making it a child of the player, and assigning "ship" to its script, so that we can access its characteristics. 
+
         ship = Instantiate(shipObj, this.transform).GetComponent<Battleship>();
     }
     // handle ship placement
     void handleShipPlacement()
     {
         // will be called on click during shipPlacement state
-        var mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        
         //print(Mathf.RoundToInt(mouseWorldPos.x) + " " + Mathf.RoundToInt(mouseWorldPos.y));
-        Vector2 v2 = new Vector2(Mathf.RoundToInt(mouseWorldPos.x), Mathf.RoundToInt(mouseWorldPos.y));
+        
         // if ship is already placed there, do nothing
-        bool b = false;
-        if(player == 1)
-        {
-            b = true;
-        }
-        Tile tilePos = GridManager.instance.GetTilePOS(v2, b);
+        Tile tilePos = getTile();
         if (tilePos != null && tilePos.Occupied == false)
         {
             GameObject ship = Instantiate(shipObj, this.transform);
+            if (player != 1) { ship.transform.rotation = Quaternion.Euler(0, 180, 0); }
             ship.GetComponent<Battleship>().player = player;
             tilePos.setUnit(ship.GetComponent<Battleship>());
             shipsPlaced++;
@@ -75,16 +75,48 @@ public class PlayerController : MonoBehaviour
         // increment shipsPlaced;
         if (shipsPlaced == 3)
         {
-            ChangeState(PlayerState.waitPhase);
-            foreach (var ship in shipList)
+            ChangeState(PlayerState.placementReady);
+            foreach (Battleship ship in shipList)
             {
                 ship.choice = "";
             }
+            //PhotonView photonView = PhotonView.Get(this);
+            //photonView.RPC("UpdatePlayerController", RpcTarget.All, this, player);
+            GameManager.Instance.sendPC(player);
         }
         else
         {
             lookingForPOS=true;
         }
+    }
+
+    private Tile getTile()
+    {
+        var mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        Vector2 v2 = new Vector2(Mathf.RoundToInt(mouseWorldPos.x), Mathf.RoundToInt(mouseWorldPos.y));
+        bool b = false;
+        if (player == 1)
+        {
+            b = true;
+        }
+        Tile tilePos = GridManager.instance.GetTilePOS(v2, b);
+        return tilePos;
+    }
+
+    public Battleship getShip()
+    {
+        Tile tilePos = getTile();
+        if (tilePos.Occupied)
+        {
+            foreach (Battleship ship in shipList)
+            {
+                if (ship.OccupiedTile == tilePos)
+                {
+                    return ship;
+                }
+            }
+        }
+        return null;
     }
     
     // Start is called before the first frame update
@@ -97,8 +129,8 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        print("Local Player Actor Number " + PhotonNetwork.LocalPlayer.ActorNumber);
-        if (lookingForPOS && Input.GetMouseButtonDown(0) && player == 1)
+        //print("Local Player Actor Number " + PhotonNetwork.LocalPlayer.ActorNumber);
+        if (lookingForPOS && Input.GetMouseButtonDown(0) && player == PhotonNetwork.LocalPlayer.ActorNumber)
         {
             lookingForPOS=false;
             handleShipPlacement();
@@ -117,5 +149,7 @@ public class PlayerController : MonoBehaviour
                 break;
         }
     }
+
+
 }   
 
