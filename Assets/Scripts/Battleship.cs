@@ -6,8 +6,9 @@ using UnityEngine;
 public class Battleship : MonoBehaviour
 {
     // Charactertistics of a ship
+    public string user;
     // position(which square on the grid) need to check if this will be stored as a vector position, or a grid type position.
-
+    public Vector2 position;
     // choice selected(shoot, scan, move, defend, unselected/default)
     public string choice;
     // destroyed or healthy
@@ -35,6 +36,7 @@ public class Battleship : MonoBehaviour
         //position = 0;
         destroyed = false;
         shield = false;
+
         //target = new Vector2(;
         speed = 1; // we can decide how fast the ships will move
         choice = "unselected";
