@@ -5,14 +5,15 @@ using UnityEngine;
 public class Battleship : MonoBehaviour
 {
     // Charactertistics of a ship
+    public string user;
     // position(which square on the grid) need to check if this will be stored as a vector position, or a grid type position.
-
+    public Vector2 position;
     // choice selected(shoot, scan, move, defend, unselected/default)
     public string choice;
     // destroyed or healthy
     public bool destroyed;
     //the target of its choice
-    public double target;
+    public Vector2 target;
     // shield = true or false
     public bool shield;
     // speed of movement(maybe unnecessary if we just want to make the ship render in a different square rather than sliding over.)
@@ -28,7 +29,8 @@ public class Battleship : MonoBehaviour
         //position = 0;
         destroyed = false;
         shield = false;
-        target = 0.0;
+        target.x = 0.0f;
+        target.y = 0.0f;
         speed = 1; // we can decide how fast the ships will move
     }
 
