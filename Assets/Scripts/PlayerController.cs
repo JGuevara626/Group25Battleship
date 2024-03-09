@@ -64,11 +64,12 @@ public class PlayerController : MonoBehaviourPunCallbacks
         if (tilePos != null && tilePos.Occupied == false)
         {
             GameObject ship = Instantiate(shipObj, this.transform);
-            if (player != 1) { ship.transform.rotation = Quaternion.Euler(0, 180, 0); }
-            ship.GetComponent<Battleship>().player = player;
-            tilePos.setUnit(ship.GetComponent<Battleship>());
+            ship.GetComponent<Battleship>().position = tilePos.transform.position;
+
+            sendShipData(ship.GetComponent<Battleship>(), shipsPlaced); //should send the same ship to both parties
+
             shipsPlaced++;
-            shipList.Add(ship.GetComponent<Battleship>());
+            Destroy(ship);
         }
 
         // otherwise if(shipsPlaced = 0, createShip(ship1), if shipsplaced = 1, createShip(ship2), if shipsPlaced = 2, createShip(ship3)
@@ -76,10 +77,6 @@ public class PlayerController : MonoBehaviourPunCallbacks
         if (shipsPlaced == 3)
         {
             ChangeState(PlayerState.placementReady);
-            foreach (Battleship ship in shipList)
-            {
-                ship.choice = "";
-            }
             //PhotonView photonView = PhotonView.Get(this);
             //photonView.RPC("UpdatePlayerController", RpcTarget.All, this, player);
             GameManager.Instance.sendPC(player);
@@ -105,18 +102,18 @@ public class PlayerController : MonoBehaviourPunCallbacks
 
     public Battleship getShip()
     {
-        Tile tilePos = getTile();
-        if (tilePos.Occupied)
+        var mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        Vector2 v2 = new Vector2(Mathf.RoundToInt(mouseWorldPos.x), Mathf.RoundToInt(mouseWorldPos.y));
+
+        foreach (Battleship ship in shipList)
         {
-            foreach (Battleship ship in shipList)
+            if (ship.position == v2)
             {
-                if (ship.OccupiedTile == tilePos)
-                {
-                    return ship;
-                }
+                return ship;
             }
         }
-        return null;
+
+            return null;
     }
     
     // Start is called before the first frame update
@@ -150,6 +147,36 @@ public class PlayerController : MonoBehaviourPunCallbacks
         }
     }
 
+    public void sendShipData(Battleship bs, int index)
+    {
+        photonView.RPC("UpdateSingleShip", RpcTarget.All, bs.position, bs.target, bs.choice, index, player);
+    }
 
+    public int locateShipInList(Battleship bs)
+    {
+        for (int j = 0; j < shipList.Count; j++)
+        {
+            if (shipList[j] == bs)
+            {
+                return j;
+            }
+        }
+        return -1;
+    }
+
+    public bool checkIfDefeated()
+    {
+        bool b = true;
+        foreach (Battleship bs in shipList)
+        {
+            if(!bs.destroyed)
+            {
+                b = false;
+                break;
+            }
+        }
+
+        return b;
+    }
 }   
 

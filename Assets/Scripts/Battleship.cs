@@ -14,7 +14,7 @@ public class Battleship : MonoBehaviour
     // destroyed or healthy
     public bool destroyed;
     //the target of its choice
-    public Vector2 target = new Vector2();
+    public Vector2 target;
     // shield = true or false
     public bool shield;
     // speed of movement(maybe unnecessary if we just want to make the ship render in a different square rather than sliding over.)
@@ -25,6 +25,7 @@ public class Battleship : MonoBehaviour
     public bool radarScan = false;
     private List<Tile> tileMovement = new List<Tile>();
     public bool lockChoice = false;
+    public GameObject lockHighlight;
     // playerNumber( which player it belongs to)- I think we can just refer to its parent, and when we instantiate the ship, we can make it a child of the player
 
     // Functions
@@ -39,6 +40,7 @@ public class Battleship : MonoBehaviour
         //target = new Vector2(;
         speed = 1; // we can decide how fast the ships will move
         choice = "unselected";
+        position = transform.position;
     }
 
     // Update is called once per frame
@@ -49,6 +51,8 @@ public class Battleship : MonoBehaviour
             moving = false;
             setNewPOS();
         }
+
+        lockHighlight.SetActive(lockChoice);
     }
 
     public void setNewPOS()
@@ -60,11 +64,23 @@ public class Battleship : MonoBehaviour
         {
             if (tile.transform.position == v2)
             {
-                transform.position = v2;
-                OccupiedTile = tile;
+                //if (player == 1)//do these when movement is played
+                //{
+                //    Tile tilePos = GridManager.instance.GetTilePOS(v2, true);
+                //    tilePos.setUnit(this);
+                //}
+                //else
+                //{
+                //    Tile tilePos = GridManager.instance.GetTilePOS(v2, false);
+                //    tilePos.setUnit(this);
+                //}
+
+
+                target = v2;
                 b = true;
                 lockChoice = true;
-                CardsGroupHandler.instance.handleCards(false);
+                CardsGroupHandler.instance.handleCards();
+                GameManager.Instance.shipToController(this);
                 break;
             }
         }
@@ -85,10 +101,11 @@ public class Battleship : MonoBehaviour
         }
     }
 
-    private void OnMouseDown()
+    public void setChoice(string s)
     {
         if (!lockChoice)
         {
+            choice = s;
             switch (choice)
             {
                 case "Move":
@@ -99,7 +116,6 @@ public class Battleship : MonoBehaviour
                     break;
             }
         }
-
     }
 
     private void usingRadar()
@@ -113,13 +129,13 @@ public class Battleship : MonoBehaviour
             GameManager.Instance.radarScanning(false);
         }
         
-        CardsGroupHandler.instance.handleCards(false);
+        CardsGroupHandler.instance.handleCards();
     }
 
     public void resetChoice()
     {
         choice = "unselected";
-        lockChoice = true;
+        lockChoice = false;
     }
 
     private void highlightSpaces()
