@@ -50,22 +50,39 @@ public class GameManager : MonoBehaviourPunCallbacks
             {
                 turnOrderShips.Add(player2.shipList[i]);
             }
-        } 
-
-        foreach (Battleship ship in turnOrderShips)
-        {
-            StartCoroutine(TurnCoroutine(ship));
         }
+
+        StartCoroutine(TurnCoroutine(turnOrderShips));
         // still need to decide on this. Current order decided on is just alternating ships, but this might be better
         // both players' defending ships go-> 
         // both players' moving ships go-> 
         // both players attacking ships go in alternating order(player 1 will go first on turn 1, player 2 will go first on turn 2.....) ->
         // both players' ships scan -> end turn
-        
+
         // change state to choiceSelection or battleAnimation based on if players have ships remaining
 
+        //reset states and timer
+    }
 
-        if(player1.checkIfDefeated() ||  player2.checkIfDefeated())
+    IEnumerator TurnCoroutine(List<Battleship> turnOrderShips)
+    {
+
+        foreach (Battleship ship in turnOrderShips)
+        {
+            string s = ("Player " + ship.player + "'s Turn").ToString();
+            //string s2 = (s + "'s Turn");
+            timer.displayText(s);
+            yield return new WaitForSeconds(1);
+            switch (ship.choice)
+            {
+                case "Move":
+                    moveShip(ship);
+                    break;
+            }
+            yield return new WaitForSeconds(1);
+        }
+
+        if (player1.checkIfDefeated() || player2.checkIfDefeated())
         {
             ChangeState(gameState.gameOver);
         }
@@ -73,19 +90,7 @@ public class GameManager : MonoBehaviourPunCallbacks
         {
             ChangeState(gameState.choiceSelection);
         }
-        //reset states and timer
-    }
 
-    IEnumerator TurnCoroutine(Battleship ship)
-    {
-        yield return new WaitForSeconds(1);
-        switch (ship.choice)
-        {
-            case "Move":
-                moveShip(ship);
-                break;
-        }
-        yield return new WaitForSeconds(2);
     }
 
     public void intakeAction(string action)
@@ -248,9 +253,12 @@ public class GameManager : MonoBehaviourPunCallbacks
         {
             case gameState.shipPlacement:
                 GridManager.instance.GenerateGrid();
-
+                //string s = "Place Your Ships!";
+                timer.displayText("Place Your Ships!");
                 break;
             case gameState.choiceSelection:
+                CardsGroupHandler.instance.handleCards();
+                timer.startCountdown(60f);
                 break; 
             case gameState.battleAnimation:
                 HandleTurnOrder();
@@ -327,7 +335,7 @@ public class GameManager : MonoBehaviourPunCallbacks
             battleS.choice = action;
             pC.shipList.Add(battleS);
 
-            if (playerIndex != PhotonNetwork.LocalPlayer.ActorNumber)
+            if (playerIndex != PhotonNetwork.LocalPlayer.ActorNumber) //hides enemy ships of local player
             {
                 ship.GetComponent<Renderer>().enabled = false;
                 ship.name = ("EnemyShip#" + shipIndex);
@@ -383,14 +391,13 @@ public class GameManager : MonoBehaviourPunCallbacks
         if (PhotonNetwork.LocalPlayer.ActorNumber == 1)
         {
             player1.status = PlayerState.waitPhase;
-            sendPC(1);
         }
         else if (PhotonNetwork.LocalPlayer.ActorNumber == 2)
         {
-            player1.status = PlayerState.waitPhase;
-            sendPC(2);
+            player2.status = PlayerState.waitPhase;
         }
 
+        sendPC(PhotonNetwork.LocalPlayer.ActorNumber);
     }
 
     public void shipToController(Battleship b)
@@ -403,7 +410,7 @@ public class GameManager : MonoBehaviourPunCallbacks
                 break;
             case 2:
                 int t = player2.locateShipInList(b);
-                player1.sendShipData(b, t);
+                player2.sendShipData(b, t);
                 break;
         }
     }
@@ -434,5 +441,30 @@ public class GameManager : MonoBehaviourPunCallbacks
             }
         }
         return b;
+    }
+
+    public void timerDone()
+    {
+        if (PhotonNetwork.LocalPlayer.ActorNumber == 1)
+        {
+            foreach (Battleship bs in player1.shipList)
+            {
+                if (!bs.lockChoice)
+                {
+                    bs.lockChoice = true;
+                }
+            }
+        }
+        else
+        {
+            foreach (Battleship bs in player2.shipList)
+            {
+                if (!bs.lockChoice)
+                {
+                    bs.lockChoice = true;
+                }
+            }
+        }
+        changeToWait();
     }
 }
