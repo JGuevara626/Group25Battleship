@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Unity.Services.Matchmaker.Models;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using static PlayerController;
 
 public class GameManager : MonoBehaviourPunCallbacks
@@ -32,6 +33,36 @@ public class GameManager : MonoBehaviourPunCallbacks
     public List<Tile> radarships = new List<Tile>();
     private List<GameObject> Scannedships = new List<GameObject>();
     private Battleship tokenShip;
+
+
+
+    // instantiate touchControls
+    public delegate void StartTouchEvent(Vector2 position, float time);
+    public event StartTouchEvent OnStartTouch;
+    public delegate void EndTouchEvent(Vector2 position, float time);
+    public event EndTouchEvent OnEndTouch;
+
+    private TouchControls touchControls;
+
+    private new void OnEnable()
+    {
+        touchControls.Enable();
+    }
+    private new void OnDisable()
+    {
+        touchControls.Disable();
+    }
+    private void StartTouch(InputAction.CallbackContext context)
+    {
+        if (OnStartTouch != null) OnStartTouch(touchControls.Touch.TouchPosition.ReadValue<Vector2>(), (float)context.startTime);
+        Debug.Log("Game manager script detected start touch: " + touchControls.Touch.TouchPosition.ReadValue<Vector2>());
+    }
+    private void EndTouch(InputAction.CallbackContext context)
+    {
+        if (OnEndTouch != null) OnEndTouch(touchControls.Touch.TouchPosition.ReadValue<Vector2>(), (float)context.time);
+        Debug.Log("Game manager script detected end touch: " + touchControls.Touch.TouchPosition.ReadValue<Vector2>());
+    }
+
     //functions
 
     // handle result of turn
@@ -106,16 +137,16 @@ public class GameManager : MonoBehaviourPunCallbacks
         heldAction = action;
     }
 
-    void HandleShipAction()
+    void HandleShipAction(string type)
     {
         //Battleship bs = new Battleship();
         switch (PhotonNetwork.LocalPlayer.ActorNumber)
         {
             case 1:
-                tokenShip = player1.getShip();
+                tokenShip = player1.getShip(type);
                 break;
             case 2:
-                tokenShip = player2.getShip();
+                tokenShip = player2.getShip(type);
                 break;
         }
 
@@ -232,6 +263,7 @@ public class GameManager : MonoBehaviourPunCallbacks
     private void Awake()
     {
         Instance = this;
+        touchControls = new TouchControls();
     }
 
     void Start()
@@ -362,7 +394,12 @@ public class GameManager : MonoBehaviourPunCallbacks
         if(searchingTile && Input.GetMouseButtonDown(0))
         {
             searchingTile = false;
-            HandleShipAction();
+            HandleShipAction("mouse");
+        }
+        if (searchingTile && OnStartTouch != null)
+        {
+            searchingTile = false;
+            HandleShipAction("touch");
         }
 
     }
