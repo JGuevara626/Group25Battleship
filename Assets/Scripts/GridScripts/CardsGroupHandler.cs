@@ -1,6 +1,7 @@
 using Photon.Pun;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 public class CardsGroupHandler : MonoBehaviour
@@ -40,28 +41,32 @@ public class CardsGroupHandler : MonoBehaviour
     {
         if (action != CurrentAction && action != "")
         {
-            mainButtons.SetActive(false);
+            mainButtons.transform.GetChild(1).gameObject.SetActive(false);
         }
         else
         {
-            
-            mainButtons.SetActive(true);
+
+            mainButtons.transform.GetChild(1).gameObject.SetActive(true);
         }
         CurrentAction = action;
         GameManager.Instance.intakeAction(action);
     }
 
-    public void handleCards(bool isfull)
+    public void handleCards()
     {
-        if (isfull)
+        CurrentAction = "";
+
+        if(GameManager.Instance.checkShipsOperated() && !actionsFull) //if all player ships are lockedin
         {
             actionsFull = true;
             mainButtons.SetActive(false);
+            GameManager.Instance.changeToWait();
         }
-        else
+        else //call after all actions are done to reset
         {
             actionsFull = false;
             mainButtons.SetActive(true);
+            mainButtons.transform.GetChild(1).gameObject.SetActive(true);
         }
     }
 }

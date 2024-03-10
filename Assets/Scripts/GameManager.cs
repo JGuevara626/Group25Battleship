@@ -3,6 +3,7 @@ using Photon.Realtime;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Services.Matchmaker.Models;
+using Unity.VisualScripting;
 using UnityEngine;
 using static PlayerController;
 
@@ -32,19 +33,64 @@ public class GameManager : MonoBehaviourPunCallbacks
     private List<GameObject> Scannedships = new List<GameObject>();
     private Battleship tokenShip;
     //functions
-    ExitGames.Client.Photon.Hashtable playerProperty = new ExitGames.Client.Photon.Hashtable();
+
     // handle result of turn
     void HandleTurnOrder()
     {
+        List<Battleship> turnOrderShips = new List<Battleship>();
+
+        for (int i = 0; i < 3; i++){
+
+            if (!player1.shipList[i].destroyed)
+            {
+                turnOrderShips.Add(player1.shipList[i]);
+            }
+
+            if (!player2.shipList[i].destroyed)
+            {
+                turnOrderShips.Add(player2.shipList[i]);
+            }
+        }
+
+        StartCoroutine(TurnCoroutine(turnOrderShips));
         // still need to decide on this. Current order decided on is just alternating ships, but this might be better
         // both players' defending ships go-> 
         // both players' moving ships go-> 
         // both players attacking ships go in alternating order(player 1 will go first on turn 1, player 2 will go first on turn 2.....) ->
         // both players' ships scan -> end turn
-        
+
         // change state to choiceSelection or battleAnimation based on if players have ships remaining
 
         //reset states and timer
+    }
+
+    IEnumerator TurnCoroutine(List<Battleship> turnOrderShips)
+    {
+
+        foreach (Battleship ship in turnOrderShips)
+        {
+            string s = ("Player " + ship.player + "'s Turn").ToString();
+            //string s2 = (s + "'s Turn");
+            timer.displayText(s);
+            yield return new WaitForSeconds(1);
+            switch (ship.choice)
+            {
+                case "Move":
+                    moveShip(ship);
+                    break;
+            }
+            yield return new WaitForSeconds(1);
+        }
+
+        if (player1.checkIfDefeated() || player2.checkIfDefeated())
+        {
+            ChangeState(gameState.gameOver);
+        }
+        else
+        {
+            ChangeState(gameState.choiceSelection);
+        }
+
     }
 
     public void intakeAction(string action)
@@ -74,24 +120,37 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
 
         bool b = false;
-        switch(heldAction)
+
+        if (tokenShip != null)
         {
-            case "Move":
-                tokenShip.choice = "Move";
-                b = true;
-                break;
-            case "Radar":
-                tokenShip.choice = "Radar";
-                b = true;
-                if (PhotonNetwork.LocalPlayer.ActorNumber == 1)
-                {
-                    GameManager.Instance.radarScanning(true);
-                }
-                else
-                {
-                    GameManager.Instance.radarScanning(false);
-                }
+            switch(heldAction)
+            {
+                case "Move":
+                    tokenShip.setChoice("Move");
+                    b = true;
                     break;
+                case "Radar":
+                    tokenShip.setChoice("Radar");
+                    b = true;
+                    if (PhotonNetwork.LocalPlayer.ActorNumber == 1)
+                    {
+                        GameManager.Instance.radarScanning(true);
+                    }
+                    else
+                    {
+                        GameManager.Instance.radarScanning(false);
+                    }
+                        break;
+            }
+        }
+
+        if (!b)
+        {
+            searchingTile = true;
+        }
+        else
+        {
+            tokenShip = null;
         }
 
         // if ship is not alive, just skip 
@@ -101,10 +160,6 @@ public class GameManager : MonoBehaviourPunCallbacks
         // if ship action is default, shoot a cannonball at a random square?
 
         // wipe ship's selection clean
-        if (!b)
-        {
-            searchingTile = true;
-        }
     }
 
     public void radarScanning(bool isPlayer1)
@@ -159,7 +214,19 @@ public class GameManager : MonoBehaviourPunCallbacks
     //moveShip(moveTo)'
     void moveShip(Battleship bs)// figure out what data type a ship's position is
     {
-        // position = newPosition;
+        if (bs.player == 1)//do these when movement is played
+        {
+            Tile tilePos = GridManager.instance.GetTilePOS(bs.target, true);
+            tilePos.setUnit(bs);
+        }
+        else
+        {
+            Tile tilePos = GridManager.instance.GetTilePOS(bs.target, false);
+            tilePos.setUnit(bs);
+        }
+        bs.target = new Vector2(0,0);
+        bs.resetChoice();
+
     }
     //
     private void Awake()
@@ -186,11 +253,17 @@ public class GameManager : MonoBehaviourPunCallbacks
         {
             case gameState.shipPlacement:
                 GridManager.instance.GenerateGrid();
-
+                //string s = "Place Your Ships!";
+                timer.displayText("Place Your Ships!");
                 break;
             case gameState.choiceSelection:
+                CardsGroupHandler.instance.handleCards();
+                timer.startCountdown(60f);
                 break; 
             case gameState.battleAnimation:
+                HandleTurnOrder();
+                break;
+            case gameState.gameOver:
                 break;
             default:
                 break;
@@ -216,21 +289,63 @@ public class GameManager : MonoBehaviourPunCallbacks
             CardsGroupUI.SetActive(true);
             player1.ChangeState(PlayerState.selectActions);
             player2.ChangeState(PlayerState.selectActions);
+            ChangeState(gameState.choiceSelection);
+        }
+
+        if(player1.status == PlayerState.waitPhase && player2.status == PlayerState.waitPhase)
+        {
+            ChangeState(gameState.battleAnimation);
         }
 
     }
 
     [PunRPC]
-    public void updateShipCoords(int n, List<Battleship> shipList)
+    public void UpdateSingleShip(Vector2 pos, Vector2 target, string action, int shipIndex, int playerIndex)
     {
-        switch (n)
+        PlayerController pC = null;
+        switch (playerIndex)
         {
             case 1:
-                player1.shipList = shipList;
+                pC = player1;
                 break;
             case 2:
-                player2.shipList = shipList;
+                pC = player2;
                 break;
+        }
+
+        if ((pC.shipList.Count - 1) < shipIndex)
+        {
+            GameObject ship = Instantiate(bs, this.transform);
+            if(playerIndex != 1) { ship.transform.rotation = Quaternion.Euler(0, 180, 0); }
+            Battleship battleS = ship.GetComponent<Battleship>();
+
+            if (playerIndex == 1)
+            {
+                Tile tilePos = GridManager.instance.GetTilePOS(pos, true);
+                tilePos.setUnit(battleS);
+            }
+            else
+            {
+                Tile tilePos = GridManager.instance.GetTilePOS(pos, false);
+                tilePos.setUnit(battleS);
+            }
+            battleS.player = playerIndex;
+            battleS.position = pos;
+            battleS.target = target;
+            battleS.choice = action;
+            pC.shipList.Add(battleS);
+
+            if (playerIndex != PhotonNetwork.LocalPlayer.ActorNumber) //hides enemy ships of local player
+            {
+                ship.GetComponent<Renderer>().enabled = false;
+                ship.name = ("EnemyShip#" + shipIndex);
+            }
+        }
+        else
+        {
+            pC.shipList[shipIndex].position = pos;
+            pC.shipList[shipIndex].target = target;
+            pC.shipList[shipIndex].choice = action;
         }
     }
 
@@ -257,7 +372,6 @@ public class GameManager : MonoBehaviourPunCallbacks
 
         if (n == 1)
         {
-            print("if player1 is true:" + player1.isActiveAndEnabled);
             photonView.RPC("UpdatePlayerController", RpcTarget.All, player1.status, n);
         }
         else if (n == 2)
@@ -267,44 +381,90 @@ public class GameManager : MonoBehaviourPunCallbacks
         
     }
 
-    [PunRPC]
-    public void sendShips()
-    {
-        if (PhotonNetwork.LocalPlayer.ActorNumber == 1)
-        {
-            photonView.RPC("updateShipCoords", RpcTarget.All, 1, player1.shipList);
-        }
-        else if (PhotonNetwork.LocalPlayer.ActorNumber == 2)
-        {
-            photonView.RPC("updateShipCoords", RpcTarget.All, 2,player2.shipList);
-        }
-    }
-
     public void callShipLocation()
     {
         photonView.RPC("sendShips", RpcTarget.All);
     }
 
+    public void changeToWait()
+    {
+        if (PhotonNetwork.LocalPlayer.ActorNumber == 1)
+        {
+            player1.status = PlayerState.waitPhase;
+        }
+        else if (PhotonNetwork.LocalPlayer.ActorNumber == 2)
+        {
+            player2.status = PlayerState.waitPhase;
+        }
 
-    //public override void OnPlayerPropertiesUpdate(Player targetPlayer, ExitGames.Client.Photon.Hashtable changedProps)
-    //{
-    //    if (PhotonNetwork.LocalPlayer == targetPlayer)
-    //    {
-    //        updateClient(targetPlayer);
-    //    }
-    //}
+        sendPC(PhotonNetwork.LocalPlayer.ActorNumber);
+    }
 
-    //public void updateClient(Player targetPlayer)
-    //{
-    //    if (targetPlayer.CustomProperties.ContainsKey("pc1"))
-    //    {
-    //        player1 = (PlayerController)targetPlayer.CustomProperties["pc1"];
-    //        playerProperty["pc1"] = (PlayerController)targetPlayer.CustomProperties["pc1"];
-    //    }
-    //    else if (targetPlayer.CustomProperties.ContainsKey("pc2"))
-    //    {
-    //        player2 = (PlayerController)targetPlayer.CustomProperties["pc2"];
-    //        playerProperty["pc2"] = (PlayerController)targetPlayer.CustomProperties["pc2"];
-    //    }
-    //}
+    public void shipToController(Battleship b)
+    {
+        switch (PhotonNetwork.LocalPlayer.ActorNumber)
+        {
+            case 1:
+                int l = player1.locateShipInList(b);
+                player1.sendShipData(b, l);
+                break;
+            case 2:
+                int t = player2.locateShipInList(b);
+                player2.sendShipData(b, t);
+                break;
+        }
+    }
+
+    public bool checkShipsOperated()
+    {
+        bool b = true;
+        if(PhotonNetwork.LocalPlayer.ActorNumber == 1)
+        {
+            foreach (Battleship bs in player1.shipList)
+            {
+                if (!bs.destroyed && !bs.lockChoice)
+                {
+                    b = false;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            foreach (Battleship bs in player2.shipList)
+            {
+                if (!bs.destroyed && !bs.lockChoice)
+                {
+                    b = false;
+                    break;
+                }
+            }
+        }
+        return b;
+    }
+
+    public void timerDone()
+    {
+        if (PhotonNetwork.LocalPlayer.ActorNumber == 1)
+        {
+            foreach (Battleship bs in player1.shipList)
+            {
+                if (!bs.lockChoice)
+                {
+                    bs.lockChoice = true;
+                }
+            }
+        }
+        else
+        {
+            foreach (Battleship bs in player2.shipList)
+            {
+                if (!bs.lockChoice)
+                {
+                    bs.lockChoice = true;
+                }
+            }
+        }
+        changeToWait();
+    }
 }
