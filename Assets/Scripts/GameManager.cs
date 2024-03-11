@@ -30,8 +30,8 @@ public class GameManager : MonoBehaviourPunCallbacks
     public GameObject CardsGroupUI;
     private bool searchingTile = false;
     private string heldAction = "";
-    public List<Tile> radarships = new List<Tile>();
-    private List<GameObject> Scannedships = new List<GameObject>();
+    //public List<Tile> radarships = new List<Tile>();
+    private List<Tile> Scannedships = new List<Tile>();
     private Battleship tokenShip;
 
 
@@ -100,8 +100,8 @@ public class GameManager : MonoBehaviourPunCallbacks
 
         foreach (Battleship ship in turnOrderShips)
         {
-            string s = ("Player " + ship.player + "'s Turn").ToString();
-            //string s2 = (s + "'s Turn");
+            if (ship.destroyed) { continue; }
+            string s = ("Player " + ship.player + "'s " + ship.name +" Turn").ToString();
             timer.displayText(s);
             yield return new WaitForSeconds(1);
             switch (ship.choice)
@@ -109,9 +109,18 @@ public class GameManager : MonoBehaviourPunCallbacks
                 case "Move":
                     moveShip(ship);
                     break;
+                case "Radar":
+                    radarScanning(ship.player); 
+                    break;
+                case "Fire":
+                    shootCannon(ship);
+                    break;
+
             }
             yield return new WaitForSeconds(1);
         }
+
+        resetAll(turnOrderShips);
 
         if (player1.checkIfDefeated() || player2.checkIfDefeated())
         {
@@ -122,6 +131,19 @@ public class GameManager : MonoBehaviourPunCallbacks
             ChangeState(gameState.choiceSelection);
         }
 
+    }
+
+    void resetAll(List<Battleship> turnOrderShips)
+    {
+        foreach (Battleship ship in turnOrderShips)
+        {
+            
+            if (PhotonNetwork.LocalPlayer.ActorNumber == ship.player)
+            {
+                ship.resetChoice();
+                shipToController(ship);
+            }
+        }
     }
 
     public void intakeAction(string action)
@@ -154,6 +176,7 @@ public class GameManager : MonoBehaviourPunCallbacks
 
         if (tokenShip != null)
         {
+            print("Selected Ship: " +  tokenShip.name);
             switch(heldAction)
             {
                 case "Move":
@@ -163,15 +186,16 @@ public class GameManager : MonoBehaviourPunCallbacks
                 case "Radar":
                     tokenShip.setChoice("Radar");
                     b = true;
-                    if (PhotonNetwork.LocalPlayer.ActorNumber == 1)
-                    {
-                        GameManager.Instance.radarScanning(true);
-                    }
-                    else
-                    {
-                        GameManager.Instance.radarScanning(false);
-                    }
-                        break;
+                    break;
+                case "Shield":
+                    tokenShip.setChoice("Shield");
+                    b = true;
+                    break;
+                case "Fire":
+                    tokenShip.setChoice("Fire");
+                    b = true;
+                    break;
+
             }
         }
 
@@ -193,16 +217,19 @@ public class GameManager : MonoBehaviourPunCallbacks
         // wipe ship's selection clean
     }
 
-    public void radarScanning(bool isPlayer1)
+    public void radarScanning(int isPlayer1)
     {
-        callShipLocation();
+        //callShipLocation();
         PlayerController pc = gameObject.AddComponent<PlayerController>();
+        List<Tile> radarships = new List<Tile>();
         clearScan();
-        if (isPlayer1)
+        if (isPlayer1 == 1)
         {
             foreach( Battleship bs in player2.shipList)
             {
                 radarships.Add(bs.OccupiedTile);
+                bs.OccupiedTile.GetComponent<Tile>().SetHighlight(true);
+                Scannedships.Add(bs.OccupiedTile);
             }
         }
         else
@@ -210,37 +237,98 @@ public class GameManager : MonoBehaviourPunCallbacks
             foreach (Battleship bs in player1.shipList)
             {
                 radarships.Add(bs.OccupiedTile);
+                bs.OccupiedTile.GetComponent<Tile>().SetHighlight(true);
+                Scannedships.Add(bs.OccupiedTile);
             }
         }
 
-        foreach (Tile t in radarships)
-        {
-            GameObject go = Instantiate(bs, t.transform);
-            go.GetComponent<SpriteRenderer>().color = Color.green;
-            Scannedships.Add(go);
-        }
+        //foreach (Tile t in radarships)
+        //{
+        //    //GameObject go = Instantiate(bs, t.transform);
+        //    t.GetComponent<Tile>().SetHighlight(true);
+        //    Scannedships.Add(t);
+        //}
         
 
     }
 
     void clearScan()
     {
-        foreach (Tile t in radarships)
+        //foreach (Tile t in radarships)
+        //{
+        //    Destroy(t.gameObject);
+        //}
+        //radarships.Clear();
+        foreach(Tile go in Scannedships)
         {
-            Destroy(t.gameObject);
-        }
-        radarships.Clear();
-        foreach (GameObject go in Scannedships)
-        {
-            DestroyImmediate(go);
+            go.GetComponent<Tile>().SetHighlight(false);
         }
         Scannedships.Clear();
     }
 
     //shootCannon(shotFrom, shotTo)
-    void shootCannon()
+    void shootCannon(Battleship bs)
     {
         // spawn a cannonball at shootFrom and make its target shotTo
+        bool hitShip = false;
+        Battleship bs2 = null;
+        if (bs.player == 1)
+        {
+            foreach(Battleship b in player2.shipList)
+            {
+                if(bs.target == b.position)
+                {
+                    bs2 = b;
+                    hitShip = true;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            foreach (Battleship b in player1.shipList)
+            {
+                if (bs.target == b.position)
+                {
+                    bs2 = b;
+                    hitShip = true;
+                    break;
+                }
+            }
+        }
+
+        if (hitShip)
+        {
+            if (bs2.shield == true)
+            {
+                bs2.shield = false;
+                string s = ("Player " + bs2.player + "'s " + bs2.name + " Defended The Attack!").ToString();
+                timer.displayText(s);
+            }
+            else if(bs2.destroyed)
+            {
+                string s = ("Player " + bs2.player + "'s Ship Is Already Destroyed").ToString();
+                timer.displayText(s);
+            }
+            else
+            {
+                string s = ("Player " + bs2.player + "'s " + bs2.name + " Has Been Hit!").ToString();
+                timer.displayText(s);
+                bs2.destroyed = true;
+                //bs2.resetChoice();
+            }
+        }
+        else
+        {
+            string s = ("Player " + bs.player + "'s " + bs.name + " Missed!").ToString();
+            timer.displayText(s);
+        }
+
+        Tile t = getEnemyTileSection(bs.target);
+        t.SetTargeted(false);
+
+        //bs.resetChoice();
+
     }
     //moveShip(moveTo)'
     void moveShip(Battleship bs)// figure out what data type a ship's position is
@@ -255,8 +343,7 @@ public class GameManager : MonoBehaviourPunCallbacks
             Tile tilePos = GridManager.instance.GetTilePOS(bs.target, false);
             tilePos.setUnit(bs);
         }
-        bs.target = new Vector2(0,0);
-        bs.resetChoice();
+        //bs.resetChoice();
 
     }
     //
@@ -369,8 +456,12 @@ public class GameManager : MonoBehaviourPunCallbacks
 
             if (playerIndex != PhotonNetwork.LocalPlayer.ActorNumber) //hides enemy ships of local player
             {
-                ship.GetComponent<Renderer>().enabled = false;
+                //ship.GetComponent<Renderer>().enabled = false;
                 ship.name = ("EnemyShip#" + shipIndex);
+            }
+            else
+            {
+                ship.name = ("Ship#" + shipIndex);
             }
         }
         else
@@ -418,10 +509,10 @@ public class GameManager : MonoBehaviourPunCallbacks
         
     }
 
-    public void callShipLocation()
-    {
-        photonView.RPC("sendShips", RpcTarget.All);
-    }
+    //public void callShipLocation()
+    //{
+    //    photonView.RPC("sendShips", RpcTarget.All);
+    //}
 
     public void changeToWait()
     {
@@ -503,5 +594,17 @@ public class GameManager : MonoBehaviourPunCallbacks
             }
         }
         changeToWait();
+    }
+
+    public Tile getEnemyTileSection(Vector2 v2)
+    {
+        if (PhotonNetwork.LocalPlayer.ActorNumber == 1)
+        {
+            return GridManager.instance.GetTilePOS(v2, false);
+        }
+        else
+        {
+            return GridManager.instance.GetTilePOS(v2, true);
+        }
     }
 }

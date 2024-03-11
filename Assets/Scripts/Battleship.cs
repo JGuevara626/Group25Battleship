@@ -21,8 +21,8 @@ public class Battleship : MonoBehaviour
     public double speed;
     public Tile OccupiedTile;
     public int player = 0;
-    public bool moving = false;
-    public bool radarScan = false;
+    private bool moving = false;
+    private bool firing = false;
     private List<Tile> tileMovement = new List<Tile>();
     public bool lockChoice = false;
     public GameObject lockHighlight;
@@ -52,7 +52,37 @@ public class Battleship : MonoBehaviour
             setNewPOS();
         }
 
+        if(firing && Input.GetMouseButtonDown(0))
+        { 
+            firing = false; 
+            setNewTarget();
+        }
+
         lockHighlight.SetActive(lockChoice);
+    }
+
+    public void setNewTarget()
+    {
+        var mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        Vector3 v2 = new Vector3(Mathf.RoundToInt(mouseWorldPos.x), Mathf.RoundToInt(mouseWorldPos.y));
+        Tile t = GameManager.Instance.getEnemyTileSection(v2);
+
+        if (t != null)
+        {
+            print("targeting: " + t);
+            t.SetTargeted(true);
+            target = v2;
+            lockChoice = true;
+            CardsGroupHandler.instance.handleCards();
+            GameManager.Instance.shipToController(this);
+            OccupiedTile.SetHighlight(false);
+        }
+        else
+        {
+            firing = true;
+        }
+
+
     }
 
     public void setNewPOS()
@@ -64,18 +94,6 @@ public class Battleship : MonoBehaviour
         {
             if (tile.transform.position == v2)
             {
-                //if (player == 1)//do these when movement is played
-                //{
-                //    Tile tilePos = GridManager.instance.GetTilePOS(v2, true);
-                //    tilePos.setUnit(this);
-                //}
-                //else
-                //{
-                //    Tile tilePos = GridManager.instance.GetTilePOS(v2, false);
-                //    tilePos.setUnit(this);
-                //}
-
-
                 target = v2;
                 b = true;
                 lockChoice = true;
@@ -112,30 +130,30 @@ public class Battleship : MonoBehaviour
                     highlightSpaces();
                     break;
                 case "Radar":
-                    usingRadar();
+                    lockChoice = true;
+                    CardsGroupHandler.instance.handleCards();
+                    GameManager.Instance.shipToController(this);
+                    break;
+                case "Shield":
+                    lockChoice = true;
+                    shield = true;
+                    CardsGroupHandler.instance.handleCards();
+                    GameManager.Instance.shipToController(this);
+                    break;
+                case "Fire":
+                    OccupiedTile.SetHighlight(true);
+                    firing = true;
                     break;
             }
         }
     }
 
-    private void usingRadar()
-    {
-        if(player == 1)
-        {
-            GameManager.Instance.radarScanning(true);
-        }
-        else
-        {
-            GameManager.Instance.radarScanning(false);
-        }
-        
-        CardsGroupHandler.instance.handleCards();
-    }
-
     public void resetChoice()
     {
+        target = new Vector2(0, 0);
         choice = "unselected";
         lockChoice = false;
+        shield = false;
     }
 
     private void highlightSpaces()
@@ -168,4 +186,13 @@ public class Battleship : MonoBehaviour
             moving = true;
         }
     }
+
+    public void killSelf()
+    {
+        choice = "unselected";
+        lockChoice = false;
+        destroyed = true;
+        OccupiedTile.SetDefeated();
+    }
+
 }

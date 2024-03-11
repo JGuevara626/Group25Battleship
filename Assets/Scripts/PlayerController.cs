@@ -121,7 +121,7 @@ public class PlayerController : MonoBehaviourPunCallbacks
         if(type == "mouse")
         {
         var mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            v2 = new Vector2(Mathf.RoundToInt(mouseWorldPos.x), Mathf.RoundToInt(mouseWorldPos.y));
+        v2 = new Vector2(Mathf.RoundToInt(mouseWorldPos.x), Mathf.RoundToInt(mouseWorldPos.y));
         } else
         {
             v2 = touchControls.Touch.TouchPosition.ReadValue<Vector2>();
