@@ -16,7 +16,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8755159056776085045
 Transform:
   m_ObjectHideFlags: 0
@@ -71,7 +71,7 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 1421299201
-  m_SortingLayer: 1
+  m_SortingLayer: 2
   m_SortingOrder: 1
   m_Sprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b, type: 3}
   m_Color: {r: 0, g: 0.30248356, b: 1, a: 1}
@@ -159,7 +159,7 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 1421299201
-  m_SortingLayer: 1
+  m_SortingLayer: 2
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: 06d6246436db3bf428fb2488893e580f, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -193,8 +193,6 @@ MonoBehaviour:
   speed: 0
   OccupiedTile: {fileID: 0}
   player: 0
-  moving: 0
-  radarScan: 0
   lockChoice: 0
   lockHighlight: {fileID: 4585371142748513962}
 --- !u!61 &6736019519524610202

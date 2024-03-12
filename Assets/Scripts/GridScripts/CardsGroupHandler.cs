@@ -60,7 +60,7 @@ public class CardsGroupHandler : MonoBehaviour
         {
             actionsFull = true;
             mainButtons.SetActive(false);
-            GameManager.Instance.changeToWait();
+            GameManager.Instance.changeToWait(PlayerController.PlayerState.waitPhase);
         }
         else //call after all actions are done to reset
         {

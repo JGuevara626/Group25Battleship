@@ -1,3 +1,4 @@
+using UnityEngine.InputSystem;
 using Photon.Pun;
 using Photon.Realtime;
 using System.Collections;
@@ -17,6 +18,7 @@ public class PlayerController : MonoBehaviourPunCallbacks
         placementReady,
         selectActions,
         selectActionLocation,
+        haltPhase,
         waitPhase
     }
     public PlayerState status;
@@ -43,7 +45,34 @@ public class PlayerController : MonoBehaviourPunCallbacks
     // cancel choice button - needs to be created in order to revert back from selectActionLocation state to selectActions state without locking in a choice.
 
     // functions
-
+    // implement touchControls
+    private TouchControls touchControls;
+    public delegate void StartTouchEvent(Vector2 position, float time);
+    public event StartTouchEvent OnStartTouch;
+    public delegate void EndTouchEvent(Vector2 position, float time);
+    public event EndTouchEvent OnEndTouch;
+    private void Awake()
+    {
+        touchControls = new TouchControls();
+    }
+    private new void OnEnable()
+    {
+        touchControls.Enable();
+    }
+    private new void OnDisable()
+    {
+        touchControls.Disable();
+    }
+    private void StartTouch(InputAction.CallbackContext context)
+    {
+        Debug.Log("PlayerController script detected start touch: " + touchControls.Touch.TouchPosition.ReadValue<Vector2>());
+        if (OnStartTouch != null) OnStartTouch(touchControls.Touch.TouchPosition.ReadValue<Vector2>(), (float)context.startTime);
+    }
+    private void EndTouch(InputAction.CallbackContext context)
+    {
+        Debug.Log("PlayerController script detected end touch:  " + touchControls.Touch.TouchPosition.ReadValue<Vector2>());
+        if (OnEndTouch != null) OnEndTouch(touchControls.Touch.TouchPosition.ReadValue<Vector2>(), (float)context.time);
+    }
     // createShip
 
     void createShip(Battleship ship)
@@ -53,14 +82,14 @@ public class PlayerController : MonoBehaviourPunCallbacks
         ship = Instantiate(shipObj, this.transform).GetComponent<Battleship>();
     }
     // handle ship placement
-    void handleShipPlacement()
+    void handleShipPlacement(string type)
     {
         // will be called on click during shipPlacement state
         
         //print(Mathf.RoundToInt(mouseWorldPos.x) + " " + Mathf.RoundToInt(mouseWorldPos.y));
         
         // if ship is already placed there, do nothing
-        Tile tilePos = getTile();
+        Tile tilePos = getTile(type);
         if (tilePos != null && tilePos.Occupied == false)
         {
             GameObject ship = Instantiate(shipObj, this.transform);
@@ -87,10 +116,17 @@ public class PlayerController : MonoBehaviourPunCallbacks
         }
     }
 
-    private Tile getTile()
+    private Tile getTile(string type)
     {
+        Vector2 v2;
+        if(type == "mouse")
+        {
         var mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        Vector2 v2 = new Vector2(Mathf.RoundToInt(mouseWorldPos.x), Mathf.RoundToInt(mouseWorldPos.y));
+        v2 = new Vector2(Mathf.RoundToInt(mouseWorldPos.x), Mathf.RoundToInt(mouseWorldPos.y));
+        } else
+        {
+            v2 = touchControls.Touch.TouchPosition.ReadValue<Vector2>();
+        }
         bool b = false;
         if (player == 1)
         {
@@ -100,10 +136,17 @@ public class PlayerController : MonoBehaviourPunCallbacks
         return tilePos;
     }
 
-    public Battleship getShip()
+    public Battleship getShip(string type)
     {
-        var mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        Vector2 v2 = new Vector2(Mathf.RoundToInt(mouseWorldPos.x), Mathf.RoundToInt(mouseWorldPos.y));
+        Vector2 v2;
+        if(type == "mouse")
+        {
+            var mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            v2 = new Vector2(Mathf.RoundToInt(mouseWorldPos.x), Mathf.RoundToInt(mouseWorldPos.y));
+        } else
+        {
+            v2 = touchControls.Touch.TouchPosition.ReadValue<Vector2>();
+        }
 
         foreach (Battleship ship in shipList)
         {
@@ -121,16 +164,23 @@ public class PlayerController : MonoBehaviourPunCallbacks
     {
         ChangeState(PlayerState.shipPlacement);
         //lookingForPOS=true;
+        touchControls.Touch.TouchPress.started += ctx => StartTouch(ctx);
+        touchControls.Touch.TouchPress.canceled += ctx => EndTouch(ctx);
     }
 
     // Update is called once per frame
     void Update()
     {
         //print("Local Player Actor Number " + PhotonNetwork.LocalPlayer.ActorNumber);
-        if (lookingForPOS && Input.GetMouseButtonDown(0) && player == PhotonNetwork.LocalPlayer.ActorNumber)
+        if (lookingForPOS && (Input.GetMouseButtonDown(0)) && player == PhotonNetwork.LocalPlayer.ActorNumber)
         {
             lookingForPOS=false;
-            handleShipPlacement();
+            handleShipPlacement("mouse");
+        }
+        if (lookingForPOS && OnStartTouch != null  && player == PhotonNetwork.LocalPlayer.ActorNumber)
+        {
+            lookingForPOS = false;
+            handleShipPlacement("touch");
         }
     }
 
@@ -149,18 +199,20 @@ public class PlayerController : MonoBehaviourPunCallbacks
 
     public void sendShipData(Battleship bs, int index)
     {
-        photonView.RPC("UpdateSingleShip", RpcTarget.All, bs.position, bs.target, bs.choice, index, player);
+        photonView.RPC("UpdateSingleShip", RpcTarget.All, bs.position, bs.target, bs.choice, index, player, bs.shield, bs.destroyed);
     }
 
     public int locateShipInList(Battleship bs)
     {
         for (int j = 0; j < shipList.Count; j++)
         {
-            if (shipList[j] == bs)
+            if (shipList[j].position == bs.position)
             {
+                print("ship index: " + j);
                 return j;
             }
         }
+        print("ship index: -1");
         return -1;
     }
 

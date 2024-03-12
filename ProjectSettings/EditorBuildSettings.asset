@@ -14,6 +14,12 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/GameVersus.unity
     guid: 20bc53662b1a15c4b855e88e24fa20ac
+  - enabled: 1
+    path: Assets/Scenes/LoseScreen.unity
+    guid: d4cf8a29f904d2d4d8826bc81972bc7c
+  - enabled: 1
+    path: Assets/Scenes/WinScreen.unity
+    guid: eab092217e651cf439f5f5cd0b7e0598
   m_configObjects:
     com.unity.adaptiveperformance.loader_settings: {fileID: 11400000, guid: f3fe097f93fa49c48bc683037ed65c8e, type: 2}
     com.unity.adaptiveperformance.simulator.provider_settings: {fileID: 11400000, guid: 4e349793f19f90b42ab995d157585700, type: 2}
