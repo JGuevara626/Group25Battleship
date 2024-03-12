@@ -18,6 +18,7 @@ public class PlayerController : MonoBehaviourPunCallbacks
         placementReady,
         selectActions,
         selectActionLocation,
+        haltPhase,
         waitPhase
     }
     public PlayerState status;
@@ -121,7 +122,7 @@ public class PlayerController : MonoBehaviourPunCallbacks
         if(type == "mouse")
         {
         var mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            v2 = new Vector2(Mathf.RoundToInt(mouseWorldPos.x), Mathf.RoundToInt(mouseWorldPos.y));
+        v2 = new Vector2(Mathf.RoundToInt(mouseWorldPos.x), Mathf.RoundToInt(mouseWorldPos.y));
         } else
         {
             v2 = touchControls.Touch.TouchPosition.ReadValue<Vector2>();
@@ -198,18 +199,20 @@ public class PlayerController : MonoBehaviourPunCallbacks
 
     public void sendShipData(Battleship bs, int index)
     {
-        photonView.RPC("UpdateSingleShip", RpcTarget.All, bs.position, bs.target, bs.choice, index, player);
+        photonView.RPC("UpdateSingleShip", RpcTarget.All, bs.position, bs.target, bs.choice, index, player, bs.shield, bs.destroyed);
     }
 
     public int locateShipInList(Battleship bs)
     {
         for (int j = 0; j < shipList.Count; j++)
         {
-            if (shipList[j] == bs)
+            if (shipList[j].position == bs.position)
             {
+                print("ship index: " + j);
                 return j;
             }
         }
+        print("ship index: -1");
         return -1;
     }
 

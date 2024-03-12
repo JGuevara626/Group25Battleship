@@ -7,6 +7,7 @@ public class Tile : MonoBehaviour
     [SerializeField] private Color baseColor, offsetColor;
     [SerializeField] private SpriteRenderer sRender;
     [SerializeField] private GameObject highlight;
+    [SerializeField] private GameObject targeted;
     public bool Occupied = false;
     public bool stayHighlighted = false;
     public void switchColor(bool isOff)
@@ -21,6 +22,7 @@ public class Tile : MonoBehaviour
             unit.OccupiedTile.Occupied = false;
         }
         unit.transform.position = transform.position;
+        unit.position = transform.position;
         Occupied = true;
         unit.OccupiedTile = this;
     }
@@ -40,12 +42,21 @@ public class Tile : MonoBehaviour
 
     private void OnMouseDown()
     {
-        print((int)transform.position.x + " " + (int)transform.position.y);
+        //print((int)transform.position.x + " " + (int)transform.position.y);
     }
 
     public void SetHighlight(bool b)
     {
         highlight.SetActive(b);
         stayHighlighted = b;
+    }
+
+    public void SetTargeted(bool b)
+    {
+        targeted.SetActive(b);
+    }
+    public void SetDefeated()
+    {
+        sRender.color = Color.grey;
     }
 }
