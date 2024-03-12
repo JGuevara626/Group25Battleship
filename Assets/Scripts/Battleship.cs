@@ -193,6 +193,7 @@ public class Battleship : MonoBehaviour
         lockChoice = false;
         destroyed = true;
         OccupiedTile.SetDefeated();
+        //GameManager.Instance.shipToController(this);
     }
 
 }
