@@ -101,7 +101,8 @@ public class GameManager : MonoBehaviourPunCallbacks
 
         foreach (Battleship ship in turnOrderShips)
         {
-            //if (ship.destroyed) { continue; }
+            ship.flipFocus();
+            if (ship.destroyed) { continue; }
             string s = ("Player " + ship.player + "'s " + ship.name +" Turn").ToString();
             timer.displayText(s);
             yield return new WaitForSeconds(1);
@@ -117,7 +118,8 @@ public class GameManager : MonoBehaviourPunCallbacks
                     shootCannon(ship);
                     break;
             }
-            yield return new WaitForSeconds(1);
+            yield return new WaitForSeconds(2);
+            ship.flipFocus();
         }
 
         resetAll(turnOrderShips);
@@ -126,12 +128,15 @@ public class GameManager : MonoBehaviourPunCallbacks
         {
             ChangeState(gameState.gameOver);
         }
-        else
-        {
-            ChangeState(gameState.choiceSelection);
-        }
+        //else
+        //{
+        //    ChangeState(gameState.choiceSelection);
+        //}
+        changeToWait(PlayerState.haltPhase);
 
     }
+
+
 
     void resetAll(List<Battleship> turnOrderShips)
     {
@@ -260,7 +265,8 @@ public class GameManager : MonoBehaviourPunCallbacks
     //shootCannon(shotFrom, shotTo)
     void shootCannon(Battleship bs)
     {
-        // spawn a cannonball at shootFrom and make its target shotTo
+        // spawn a cannonball at shootFrom and make its target shotTo\
+        bs.shoot();
         bool hitShip = false;
         Battleship bs2 = null;
         if (bs.player == 1)
@@ -318,11 +324,11 @@ public class GameManager : MonoBehaviourPunCallbacks
         Tile t = null;
         if (bs.player == 1)
         {
-            t = GridManager.instance.GetTilePOS(bs.target, false);
+            t = GridManager.instance.GetTilePOS(bs.target, 2);
         }
         else
         {
-            t = GridManager.instance.GetTilePOS(bs.target, true);
+            t = GridManager.instance.GetTilePOS(bs.target, 1);
         }
         t.SetTargeted(false);
 
@@ -334,12 +340,12 @@ public class GameManager : MonoBehaviourPunCallbacks
     {
         if (bs.player == 1)//do these when movement is played
         {
-            Tile tilePos = GridManager.instance.GetTilePOS(bs.target, true);
+            Tile tilePos = GridManager.instance.GetTilePOS(bs.target, 1);
             tilePos.setUnit(bs);
         }
         else
         {
-            Tile tilePos = GridManager.instance.GetTilePOS(bs.target, false);
+            Tile tilePos = GridManager.instance.GetTilePOS(bs.target, 2);
             tilePos.setUnit(bs);
         }
         //bs.resetChoice();
@@ -383,36 +389,29 @@ public class GameManager : MonoBehaviourPunCallbacks
                 HandleTurnOrder();
                 break;
             case gameState.gameOver:
-                gameoversceneChange(PhotonNetwork.LocalPlayer.ActorNumber);
+                if (player1.checkIfDefeated())
+                {
+                    gameoversceneChange(1);
+                }
+                else if (player2.checkIfDefeated())
+                { 
+                    gameoversceneChange(2); 
+                }
                 break;
             default:
                 break;
         }
     }
 
-    void gameoversceneChange(int playerint)
+    void gameoversceneChange(int defeatedplayer)
     {
-        if(playerint == 1)
+        if(PhotonNetwork.LocalPlayer.ActorNumber == defeatedplayer)
         {
-            if(player1.checkIfDefeated())
-            {
-                SceneManager.LoadScene("LoseScreen");
-            }
-            else
-            {
-                SceneManager.LoadScene("WinScreen");
-            }
+            SceneManager.LoadScene("LoseScreen");
         }
         else
         {
-            if (player2.checkIfDefeated())
-            {
-                SceneManager.LoadScene("LoseScreen");
-            }
-            else
-            {
-                SceneManager.LoadScene("WinScreen");
-            }
+            SceneManager.LoadScene("WinScreen");
         }
     }
 
@@ -443,6 +442,11 @@ public class GameManager : MonoBehaviourPunCallbacks
             ChangeState(gameState.battleAnimation);
         }
 
+        if (player1.status == PlayerState.haltPhase && player2.status == PlayerState.haltPhase)
+        {
+            ChangeState(gameState.choiceSelection);
+        }
+
     }
 
     [PunRPC]
@@ -465,16 +469,9 @@ public class GameManager : MonoBehaviourPunCallbacks
             if(playerIndex != 1) { ship.transform.rotation = Quaternion.Euler(0, 180, 0); }
             Battleship battleS = ship.GetComponent<Battleship>();
 
-            if (playerIndex == 1)
-            {
-                Tile tilePos = GridManager.instance.GetTilePOS(pos, true);
-                tilePos.setUnit(battleS);
-            }
-            else
-            {
-                Tile tilePos = GridManager.instance.GetTilePOS(pos, false);
-                tilePos.setUnit(battleS);
-            }
+            Tile tilePos = GridManager.instance.GetTilePOS(pos, playerIndex);
+            tilePos.setUnit(battleS);
+
             battleS.player = playerIndex;
             battleS.position = pos;
             battleS.target = target;
@@ -629,13 +626,14 @@ public class GameManager : MonoBehaviourPunCallbacks
 
     public Tile getEnemyTileSection(Vector2 v2)
     {
-        if (PhotonNetwork.LocalPlayer.ActorNumber == 1)
+        switch (PhotonNetwork.LocalPlayer.ActorNumber)
         {
-            return GridManager.instance.GetTilePOS(v2, false);
+            case 1:
+                return GridManager.instance.GetTilePOS(v2, 2);
+            case 2:
+                return GridManager.instance.GetTilePOS(v2, 1);
         }
-        else
-        {
-            return GridManager.instance.GetTilePOS(v2, true);
-        }
+        return null;
+        
     }
 }
