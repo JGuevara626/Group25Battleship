@@ -59,4 +59,9 @@ public class Tile : MonoBehaviour
     {
         sRender.color = Color.grey;
     }
+
+    public void waterhit()
+    {
+        GetComponent<Animator>().SetTrigger("playSplash");
+    }
 }

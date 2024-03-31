@@ -127,12 +127,8 @@ public class PlayerController : MonoBehaviourPunCallbacks
         {
             v2 = touchControls.Touch.TouchPosition.ReadValue<Vector2>();
         }
-        bool b = false;
-        if (player == 1)
-        {
-            b = true;
-        }
-        Tile tilePos = GridManager.instance.GetTilePOS(v2, b);
+
+        Tile tilePos = GridManager.instance.GetTilePOS(v2, player);
         return tilePos;
     }
 

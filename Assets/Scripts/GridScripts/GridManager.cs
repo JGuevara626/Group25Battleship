@@ -69,16 +69,16 @@ public class GridManager : MonoBehaviour
         cam.transform.position = new Vector3((float)gridWidth / 2 - 0.5f, (float)gridHeight / 2 + 0.5f, -10);
     }
 
-    public Tile GetTilePOS(Vector2 pos, bool ifLeft)
+    public Tile GetTilePOS(Vector2 pos, int ifLeft)
     {
         switch (ifLeft){
-            case true:
+            case 1:
                 if (LTilemap.TryGetValue(pos, out var l))
                 {
                     return l;
                 }
                 break;
-            case false:
+            case 2:
                 if (RTilemap.TryGetValue(pos, out var r))
                 {
                     return r;
@@ -88,7 +88,20 @@ public class GridManager : MonoBehaviour
         return null;
     }
 
-    public List<Tile> GetDirectionalTiles(Vector2 centerV, bool b)
+    public Tile GetTileAnyPOS(Vector2 pos)
+    {
+        if (LTilemap.TryGetValue(pos, out var l))
+        {
+            return l;
+        }
+        else if (RTilemap.TryGetValue(pos, out var r))
+        {
+            return r;
+        }
+        else { return null; }
+    }
+
+    public List<Tile> GetDirectionalTiles(Vector2 centerV, int b)
     {
         List<Tile> list = new List<Tile>();
         Vector2 upV = new Vector2(centerV.x, centerV.y + 1);

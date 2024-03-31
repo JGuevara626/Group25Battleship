@@ -25,7 +25,10 @@ public class Battleship : MonoBehaviour
     private bool firing = false;
     private List<Tile> tileMovement = new List<Tile>();
     public bool lockChoice = false;
+    [Space(10)]
     public GameObject lockHighlight;
+    public GameObject Cannonball;
+    public GameObject Focused;
     // playerNumber( which player it belongs to)- I think we can just refer to its parent, and when we instantiate the ship, we can make it a child of the player
 
     // Functions
@@ -59,6 +62,24 @@ public class Battleship : MonoBehaviour
         }
 
         lockHighlight.SetActive(lockChoice);
+    }
+
+    public void shoot()
+    {
+        GameObject ball = Instantiate(Cannonball);
+        if(player == 1)
+        {
+            ball.GetComponent<CannonBall>().shotBall(position, target, 2);
+        }
+        else
+        {
+            ball.GetComponent<CannonBall>().shotBall(position, target, 1);
+        }
+
+        if(PhotonNetwork.LocalPlayer.ActorNumber != player)
+        {
+            ball.GetComponent<Renderer>().enabled = false;
+        }
     }
 
     public void setNewTarget()
@@ -171,19 +192,22 @@ public class Battleship : MonoBehaviour
         }
         else
         {
-            bool b = false;
             Vector2 centerV = new Vector2(Mathf.RoundToInt(transform.position.x), Mathf.RoundToInt(transform.position.y));
-            if (player == 1)
-            {
-                b = true;
-            }
 
-            tileMovement = GridManager.instance.GetDirectionalTiles(centerV, b);
+            tileMovement = GridManager.instance.GetDirectionalTiles(centerV, player);
             foreach (Tile tile in tileMovement)
             {
                 tile.SetHighlight(true);
             }
             moving = true;
+        }
+    }
+
+    public void flipFocus()
+    {
+        if (PhotonNetwork.LocalPlayer.ActorNumber == player)
+        {
+            Focused.SetActive(!Focused.activeSelf);
         }
     }
 
