@@ -4,6 +4,7 @@ using UnityEngine;
 using Photon.Pun;
 using TMPro;
 using UnityEngine.SceneManagement;
+using Photon.Realtime;
 
 public class ServerConnecter : MonoBehaviourPunCallbacks
 {
@@ -24,5 +25,9 @@ public class ServerConnecter : MonoBehaviourPunCallbacks
     public override void OnConnectedToMaster()
     {
         SceneManager.LoadScene("MatchmakingScreen");
+    }
+    public override void OnDisconnected(DisconnectCause cause)
+    {
+        SceneManager.LoadScene("TitleScreen");
     }
 }
