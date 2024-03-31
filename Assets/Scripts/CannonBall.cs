@@ -45,7 +45,7 @@ public class CannonBall : MonoBehaviour
             //    //Destroy(gameObject);
             //}
             transform.position = Vector3.Lerp(position, target, 1 - (remainingDistance / distance));
-            remainingDistance -= 16f * Time.deltaTime;
+            remainingDistance -= 18f * Time.deltaTime;
 
             if (remainingDistance <= 0)
             {
