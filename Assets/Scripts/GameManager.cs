@@ -34,7 +34,8 @@ public class GameManager : MonoBehaviourPunCallbacks
     //public List<Tile> radarships = new List<Tile>();
     private List<Tile> Scannedships = new List<Tile>();
     private Battleship tokenShip;
-
+    [Space(5)]
+    public GameObject ResultScreen, WinRS, LoseRS;
 
 
     // instantiate touchControls
@@ -405,13 +406,20 @@ public class GameManager : MonoBehaviourPunCallbacks
 
     void gameoversceneChange(int defeatedplayer)
     {
+        timer.GetComponent<Timer>().timerStarted = false;
+        CardsGroupUI.SetActive(false);
+        ResultScreen.SetActive(true);
         if(PhotonNetwork.LocalPlayer.ActorNumber == defeatedplayer)
         {
-            SceneManager.LoadScene("LoseScreen");
+            LoseRS.SetActive(true);
+            //PhotonNetwork.LeaveRoom();
+            //SceneManager.LoadScene("LoseScreen");
         }
-        else
+        else if (PhotonNetwork.LocalPlayer.ActorNumber != defeatedplayer)
         {
-            SceneManager.LoadScene("WinScreen");
+            WinRS.SetActive(true);
+            //PhotonNetwork.LeaveRoom();
+            //SceneManager.LoadScene("WinScreen");
         }
     }
 
@@ -445,6 +453,14 @@ public class GameManager : MonoBehaviourPunCallbacks
         if (player1.status == PlayerState.haltPhase && player2.status == PlayerState.haltPhase)
         {
             ChangeState(gameState.choiceSelection);
+        }
+
+        if (player1.status == PlayerState.rematch && player2.status == PlayerState.rematch)
+        {
+            if (PhotonNetwork.CurrentRoom.PlayerCount == 2)
+            {
+                PhotonNetwork.LoadLevel("GameVersus");
+            }
         }
 
     }
@@ -635,5 +651,34 @@ public class GameManager : MonoBehaviourPunCallbacks
         }
         return null;
         
+    }
+
+    public void rematch()
+    {
+        changeToWait(PlayerState.rematch);
+    }
+
+    public void leaveGame()
+    {
+        StartCoroutine(DisconnectAndLoad());
+    }
+
+    //public override void OnLeftRoom()
+    //{
+    //    PhotonNetwork.Disconnect();
+    //}
+
+    //public override void OnDisconnected(DisconnectCause cause)
+    //{
+    //    base.OnDisconnected(cause);
+    //    SceneManager.LoadScene("TitleScreen");
+    //}
+
+    IEnumerator DisconnectAndLoad()
+    {
+        PhotonNetwork.Disconnect();
+        while (PhotonNetwork.IsConnected)
+            yield return null;
+        SceneManager.LoadScene(0);
     }
 }
