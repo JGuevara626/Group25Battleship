@@ -109,6 +109,7 @@ MonoBehaviour:
   targeted: {fileID: 3579171409029443858}
   Occupied: 0
   stayHighlighted: 0
+  splashclip: {fileID: 8300000, guid: d1b5830e00115c04aaea3ad9d0ff6bba, type: 3}
 --- !u!61 &4120907483820530460
 BoxCollider2D:
   m_ObjectHideFlags: 0
