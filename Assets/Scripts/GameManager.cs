@@ -36,8 +36,6 @@ public class GameManager : MonoBehaviourPunCallbacks
     private Battleship tokenShip;
     [Space(5)]
     public GameObject ResultScreen, WinRS, LoseRS;
-
-
     // instantiate touchControls
     public delegate void StartTouchEvent(Vector2 position, float time);
     public event StartTouchEvent OnStartTouch;
@@ -102,8 +100,11 @@ public class GameManager : MonoBehaviourPunCallbacks
 
         foreach (Battleship ship in turnOrderShips)
         {
+            if (ship.destroyed) 
+            { 
+                continue; 
+            }
             ship.flipFocus();
-            if (ship.destroyed) { continue; }
             string s = ("Player " + ship.player + "'s " + ship.name +" Turn").ToString();
             timer.displayText(s);
             yield return new WaitForSeconds(1);
@@ -113,6 +114,7 @@ public class GameManager : MonoBehaviourPunCallbacks
                     moveShip(ship);
                     break;
                 case "Radar":
+                    GameObject.FindWithTag("audioclipS").GetComponent<AudioSource>().PlayOneShot(ship.scanNoise);
                     radarScanning(ship.player);
                     break;
                 case "Fire":
@@ -312,7 +314,7 @@ public class GameManager : MonoBehaviourPunCallbacks
             {
                 string s = ("Player " + bs2.player + "'s " + bs2.name + " Has Been Hit!").ToString();
                 timer.displayText(s);
-                bs2.killSelf();
+                //bs2.killSelf();
                 //bs2.resetChoice();
             }
         }
@@ -680,5 +682,34 @@ public class GameManager : MonoBehaviourPunCallbacks
         while (PhotonNetwork.IsConnected)
             yield return null;
         SceneManager.LoadScene(0);
+    }
+
+    public void doesItHit(Tile t, int playernum)
+    {
+        switch (playernum)
+        {
+            case 1:
+                foreach (Battleship bs in player1.shipList)
+                {
+                    if (bs.OccupiedTile == t && bs.shield == false)
+                    {
+                        bs.killSelf();
+                        return;
+                    }
+                }
+                t.waterhit();
+                break;
+            case 2:
+                foreach (Battleship bs in player2.shipList)
+                {
+                    if (bs.OccupiedTile == t && bs.shield == false)
+                    {
+                        bs.killSelf();
+                        return;
+                    }
+                }
+                t.waterhit();
+                break;
+        }
     }
 }

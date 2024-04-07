@@ -10,6 +10,7 @@ public class Tile : MonoBehaviour
     [SerializeField] private GameObject targeted;
     public bool Occupied = false;
     public bool stayHighlighted = false;
+    public AudioClip splashclip;
     public void switchColor(bool isOff)
     {
         sRender.color = isOff ? offsetColor : baseColor;
@@ -62,6 +63,7 @@ public class Tile : MonoBehaviour
 
     public void waterhit()
     {
+        GameObject.FindWithTag("audioclipS").GetComponent<AudioSource>().PlayOneShot(splashclip);
         GetComponent<Animator>().SetTrigger("playSplash");
     }
 }
