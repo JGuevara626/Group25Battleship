@@ -65,6 +65,7 @@ public class GameManager : MonoBehaviourPunCallbacks
 
     //functions
 
+
     // handle result of turn
     void HandleTurnOrder()
     {
@@ -100,6 +101,12 @@ public class GameManager : MonoBehaviourPunCallbacks
 
         foreach (Battleship ship in turnOrderShips)
         {
+            if(tokenShip != null)
+            {
+                tokenShip.shield = false;
+                tokenShip = null;
+            }
+
             if (ship.destroyed) 
             { 
                 continue; 
@@ -118,7 +125,7 @@ public class GameManager : MonoBehaviourPunCallbacks
                     radarScanning(ship.player);
                     break;
                 case "Fire":
-                    shootCannon(ship);
+                    tokenShip = shootCannon(ship);
                     break;
             }
             yield return new WaitForSeconds(2);
@@ -266,7 +273,7 @@ public class GameManager : MonoBehaviourPunCallbacks
     }
 
     //shootCannon(shotFrom, shotTo)
-    void shootCannon(Battleship bs)
+    Battleship shootCannon(Battleship bs)
     {
         // spawn a cannonball at shootFrom and make its target shotTo\
         bs.shoot();
@@ -301,7 +308,8 @@ public class GameManager : MonoBehaviourPunCallbacks
         {
             if (bs2.shield == true)
             {
-                bs2.shield = false;
+                bs2.startDefenceAnim();
+                //bs2.shield = false;
                 string s = ("Player " + bs2.player + "'s " + bs2.name + " Defended The Attack!").ToString();
                 timer.displayText(s);
             }
@@ -315,28 +323,27 @@ public class GameManager : MonoBehaviourPunCallbacks
                 string s = ("Player " + bs2.player + "'s " + bs2.name + " Has Been Hit!").ToString();
                 timer.displayText(s);
                 //bs2.killSelf();
-                //bs2.resetChoice();
+                
+                Tile t = null;
+                if (bs.player == 1)
+                {
+                    t = GridManager.instance.GetTilePOS(bs.target, 2);
+                }
+                else
+                {
+                    t = GridManager.instance.GetTilePOS(bs.target, 1);
+                }
+                t.SetTargeted(false);
             }
+            return bs2;
         }
         else
         {
             string s = ("Player " + bs.player + "'s " + bs.name + " Missed!").ToString();
             timer.displayText(s);
+            return null;
         }
-
-        Tile t = null;
-        if (bs.player == 1)
-        {
-            t = GridManager.instance.GetTilePOS(bs.target, 2);
-        }
-        else
-        {
-            t = GridManager.instance.GetTilePOS(bs.target, 1);
-        }
-        t.SetTargeted(false);
-
         //bs.resetChoice();
-
     }
     //moveShip(moveTo)'
     void moveShip(Battleship bs)// figure out what data type a ship's position is
@@ -465,6 +472,11 @@ public class GameManager : MonoBehaviourPunCallbacks
             }
         }
 
+        if (player1.status == PlayerState.leftRoom || player2.status == PlayerState.leftRoom)
+        {
+            StartCoroutine(DisconnectAndLoad());
+        }
+
     }
 
     [PunRPC]
@@ -539,6 +551,10 @@ public class GameManager : MonoBehaviourPunCallbacks
             HandleShipAction("touch");
         }
 
+        if(PhotonNetwork.IsMasterClient && PhotonNetwork.CurrentRoom.PlayerCount != 2)
+        {
+            StartCoroutine(DisconnectAndLoad());
+        }
     }
 
     public void sendPC(int n)
@@ -662,7 +678,7 @@ public class GameManager : MonoBehaviourPunCallbacks
 
     public void leaveGame()
     {
-        StartCoroutine(DisconnectAndLoad());
+        changeToWait(PlayerState.leftRoom);
     }
 
     //public override void OnLeftRoom()
@@ -678,6 +694,7 @@ public class GameManager : MonoBehaviourPunCallbacks
 
     IEnumerator DisconnectAndLoad()
     {
+        PhotonNetwork.LeaveRoom();
         PhotonNetwork.Disconnect();
         while (PhotonNetwork.IsConnected)
             yield return null;
@@ -694,10 +711,15 @@ public class GameManager : MonoBehaviourPunCallbacks
                     if (bs.OccupiedTile == t && bs.shield == false)
                     {
                         bs.killSelf();
+                        t.waterhit();
                         return;
                     }
+                    else
+                    {
+                        continue;
+                    }
                 }
-                t.waterhit();
+                
                 break;
             case 2:
                 foreach (Battleship bs in player2.shipList)
@@ -705,10 +727,14 @@ public class GameManager : MonoBehaviourPunCallbacks
                     if (bs.OccupiedTile == t && bs.shield == false)
                     {
                         bs.killSelf();
+                        t.waterhit();
                         return;
                     }
+                    else
+                    {
+                        continue;
+                    }
                 }
-                t.waterhit();
                 break;
         }
     }
