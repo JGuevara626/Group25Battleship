@@ -9,11 +9,16 @@ public class AudioController : MonoBehaviour
     private float musicVolume = 1f;
     public AudioSource bgMusic;
     public GameObject bgMusicObj;
+    public AudioSource soundfx;
+    public GameObject soundfxObj;
 
     private void Start()
     {
         bgMusicObj = GameObject.FindGameObjectWithTag("BackgroundMusic");
         bgMusic = bgMusicObj.GetComponent<AudioSource>();
+
+        soundfxObj = GameObject.FindGameObjectWithTag("audioclipS");
+        soundfx = soundfxObj.GetComponent<AudioSource>();
 
         musicVolume = PlayerPrefs.GetFloat("volume");
         bgMusic.volume = musicVolume;
