@@ -30,11 +30,13 @@ public class Battleship : MonoBehaviour
     public GameObject Focused;
     public ParticleSystem smoke;
     public ParticleSystem burst;
+    public List<ParticleSystem> defenceParticles = new List<ParticleSystem>();
     // playerNumber( which player it belongs to)- I think we can just refer to its parent, and when we instantiate the ship, we can make it a child of the player
     private AudioSource audioCS;
     [Space(10)]
     public AudioClip explosionNoise;
     public AudioClip scanNoise;
+    public AudioClip defendingNoise;
     // Functions
     // Start is called before the first frame update
     void Start()
@@ -107,6 +109,24 @@ public class Battleship : MonoBehaviour
         }
 
 
+    }
+
+    public void startDefenceAnim()
+    {
+        if (PhotonNetwork.LocalPlayer.ActorNumber == player)
+        {
+            GameObject.FindWithTag("audioclipS").GetComponent<AudioSource>().PlayOneShot(defendingNoise);
+            StartCoroutine(playDefenceShots());
+        }
+    }
+
+    IEnumerator playDefenceShots()
+    {
+        foreach(ParticleSystem dps in defenceParticles)
+        {
+            dps.Play();
+            yield return new WaitForSeconds(0.5f);
+        }
     }
 
     public void setNewPOS()

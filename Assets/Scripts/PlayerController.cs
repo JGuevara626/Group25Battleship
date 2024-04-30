@@ -20,6 +20,7 @@ public class PlayerController : MonoBehaviourPunCallbacks
         selectActionLocation,
         haltPhase,
         rematch,
+        leftRoom,
         waitPhase
     }
     public PlayerState status;
