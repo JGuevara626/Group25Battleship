@@ -23,7 +23,6 @@ public class ResolutionManager : MonoBehaviour
             float heightFloat = (float)(resolutions[i].height);
             if (widthFloat/heightFloat == 16.0/9.0)
             {
-                Debug.Log(resolutions[i].width + "x" + resolutions[i].height + "is 16x9");
                 resolutionList.Add(resolutions[i]);
             }
         }

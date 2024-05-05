@@ -1625,8 +1625,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   musicSlider: {fileID: 384618806}
+  soundfxSlider: {fileID: 1027602438}
   bgMusic: {fileID: 0}
   bgMusicObj: {fileID: 0}
+  soundfx: {fileID: 0}
+  soundfxObj: {fileID: 0}
 --- !u!4 &823429325
 Transform:
   m_ObjectHideFlags: 0
