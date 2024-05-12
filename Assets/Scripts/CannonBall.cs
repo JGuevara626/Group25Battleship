@@ -16,6 +16,7 @@ public class CannonBall : MonoBehaviour
     float distance;
     float remainingDistance;
     public int isLeft;
+    public AudioClip firedClip;
     // Functions
 
     // handler for when it gets to target position
@@ -30,7 +31,7 @@ public class CannonBall : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        GameObject.FindWithTag("audioclipS").GetComponent<AudioSource>().PlayOneShot(firedClip);
     }
 
     // Update is called once per frame
@@ -45,23 +46,13 @@ public class CannonBall : MonoBehaviour
             //    //Destroy(gameObject);
             //}
             transform.position = Vector3.Lerp(position, target, 1 - (remainingDistance / distance));
-            remainingDistance -= 16f * Time.deltaTime;
+            remainingDistance -= 18f * Time.deltaTime;
 
             if (remainingDistance <= 0)
             {
                 launched = false;
-                if(isLeft == 1)
-                {
-                    Tile t = GridManager.instance.GetTilePOS(target, isLeft);
-                    t.waterhit();
-                }
-                else
-                {
-                    Tile t = GridManager.instance.GetTilePOS(target, isLeft);
-                    t.waterhit();
-                }
-                //Tile t = GridManager.instance.GetTilePOS(target, isLeft);
-                //t.waterhit();
+                Tile t = GridManager.instance.GetTilePOS(target, isLeft);
+                GameManager.Instance.doesItHit(t, isLeft);
                 Destroy(gameObject);
             }
         }

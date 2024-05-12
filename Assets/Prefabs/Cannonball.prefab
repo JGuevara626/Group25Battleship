@@ -100,3 +100,5 @@ MonoBehaviour:
   position: {x: 0, y: 0, z: 0}
   target: {x: 0, y: 0, z: 0}
   launched: 0
+  isLeft: 0
+  firedClip: {fileID: 8300000, guid: 7658ba89fd13c6b429af1ff816e638ee, type: 3}

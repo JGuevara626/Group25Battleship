@@ -6,7 +6,7 @@ using UnityEngine;
 public class Battleship : MonoBehaviour
 {
     // Charactertistics of a ship
-    public string user;
+    //public string user;
     // position(which square on the grid) need to check if this will be stored as a vector position, or a grid type position.
     public Vector2 position;
     // choice selected(shoot, scan, move, defend, unselected/default)
@@ -18,7 +18,6 @@ public class Battleship : MonoBehaviour
     // shield = true or false
     public bool shield;
     // speed of movement(maybe unnecessary if we just want to make the ship render in a different square rather than sliding over.)
-    public double speed;
     public Tile OccupiedTile;
     public int player = 0;
     private bool moving = false;
@@ -29,19 +28,25 @@ public class Battleship : MonoBehaviour
     public GameObject lockHighlight;
     public GameObject Cannonball;
     public GameObject Focused;
+    public ParticleSystem smoke;
+    public ParticleSystem burst;
+    public List<ParticleSystem> defenceParticles = new List<ParticleSystem>();
     // playerNumber( which player it belongs to)- I think we can just refer to its parent, and when we instantiate the ship, we can make it a child of the player
-
+    private AudioSource audioCS;
+    [Space(10)]
+    public AudioClip explosionNoise;
+    public AudioClip scanNoise;
+    public AudioClip defendingNoise;
     // Functions
-
-
     // Start is called before the first frame update
     void Start()
     {
+        audioCS = GameObject.FindWithTag("audioclipS").GetComponent<AudioSource>();
         //position = 0;
         destroyed = false;
         shield = false;
         //target = new Vector2(;
-        speed = 1; // we can decide how fast the ships will move
+        //speed = 1; // we can decide how fast the ships will move
         choice = "unselected";
         position = transform.position;
     }
@@ -106,6 +111,24 @@ public class Battleship : MonoBehaviour
 
     }
 
+    public void startDefenceAnim()
+    {
+        if (PhotonNetwork.LocalPlayer.ActorNumber == player)
+        {
+            GameObject.FindWithTag("audioclipS").GetComponent<AudioSource>().PlayOneShot(defendingNoise);
+            StartCoroutine(playDefenceShots());
+        }
+    }
+
+    IEnumerator playDefenceShots()
+    {
+        foreach(ParticleSystem dps in defenceParticles)
+        {
+            dps.Play();
+            yield return new WaitForSeconds(0.5f);
+        }
+    }
+
     public void setNewPOS()
     {
         bool b = false;
@@ -142,6 +165,16 @@ public class Battleship : MonoBehaviour
 
     public void setChoice(string s)
     {
+        if(tileMovement.Count > 0)
+        {
+            foreach (Tile tile in tileMovement)
+            {
+                tile.SetHighlight(false);
+            }
+            tileMovement.Clear();
+        }
+
+
         if (!lockChoice)
         {
             choice = s;
@@ -215,7 +248,10 @@ public class Battleship : MonoBehaviour
     {
         choice = "unselected";
         lockChoice = false;
+        burst.Play();
+        smoke.Play();
         destroyed = true;
+        audioCS.PlayOneShot(explosionNoise);
         OccupiedTile.SetDefeated();
         //GameManager.Instance.shipToController(this);
     }

@@ -24,6 +24,7 @@ public class PlayerCard : MonoBehaviourPunCallbacks
         {
             ReadyButton.interactable = true;
         }
+        playerProperty["isReady"] = false;
         updatePlayerCard(currentPlayer);
     }
 
