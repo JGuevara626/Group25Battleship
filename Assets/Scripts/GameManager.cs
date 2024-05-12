@@ -36,7 +36,6 @@ public class GameManager : MonoBehaviourPunCallbacks
     private Battleship tokenShip;
     [Space(5)]
     public GameObject ResultScreen, WinRS, LoseRS;
-    public GameObject MapPointer1, MapPointer2;
     // instantiate touchControls
     public delegate void StartTouchEvent(Vector2 position, float time);
     public event StartTouchEvent OnStartTouch;
@@ -377,8 +376,6 @@ public class GameManager : MonoBehaviourPunCallbacks
         player1.shipObj = bs;
         player2.player = 2;
         player2.shipObj = bs;
-        MapPointer1.SetActive(false);
-        MapPointer2.SetActive(false);
         ChangeState(gameState.shipPlacement);
         print(photonView);
     }
@@ -392,14 +389,6 @@ public class GameManager : MonoBehaviourPunCallbacks
                 GridManager.instance.GenerateGrid();
                 //string s = "Place Your Ships!";
                 timer.displayText("Place Your Ships!");
-                if(PhotonNetwork.LocalPlayer.ActorNumber == 1)
-                {
-                    MapPointer1.SetActive(true);
-                }
-                else
-                {
-                    MapPointer2.SetActive(true);
-                }
                 break;
             case gameState.choiceSelection:
                 changeToWait(PlayerState.selectActions);
@@ -463,8 +452,6 @@ public class GameManager : MonoBehaviourPunCallbacks
             player1.ChangeState(PlayerState.selectActions);
             player2.ChangeState(PlayerState.selectActions);
             ChangeState(gameState.choiceSelection);
-            MapPointer1.SetActive(false);
-            MapPointer2.SetActive(false);
         }
 
         if(player1.status == PlayerState.waitPhase && player2.status == PlayerState.waitPhase)

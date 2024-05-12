@@ -165,16 +165,6 @@ public class Battleship : MonoBehaviour
 
     public void setChoice(string s)
     {
-        if(tileMovement.Count > 0)
-        {
-            foreach (Tile tile in tileMovement)
-            {
-                tile.SetHighlight(false);
-            }
-            tileMovement.Clear();
-        }
-
-
         if (!lockChoice)
         {
             choice = s;
